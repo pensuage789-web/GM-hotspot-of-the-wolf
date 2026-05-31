@@ -3,17 +3,37 @@
   "regions": {
     "eurozone": {
       "name": "欧元区",
-      "rate": "示例：ECB deposit facility rate 3.25%",
-      "gdp_growth": "示例：2026E 实际GDP增速 1.1%",
+      "rate": {
+        "德国": "德国10Y--2.953%",
+        "法国": "法国10Y--3.561%",
+        "意大利": "请填写：意大利10Y--"
+      },
+      "gdp_growth": {
+        "德国": "示例：2026E 实际GDP增速，请填写",
+        "法国": "示例：2026E 实际GDP增速，请填写",
+        "意大利": "示例：2026E 实际GDP增速，请填写"
+      },
+      "inflation": "示例：欧元区HICP同比，请填写",
       "central_bank_decision": "示例：维持利率不变，强调通胀路径仍需观察。",
       "major_event": "示例：财政规则、能源价格和法国/德国增长分化仍是主要宏观变量。",
       "currency_strength": "示例：EUR 中性偏强，受美元走弱与实际利率支撑。",
       "market_view": "示例：市场关注ECB降息节奏是否慢于美联储，以及欧元区PMI是否持续修复。"
     },
+    "uk": {
+      "name": "英国",
+      "rate": "示例：BoE Bank Rate，请填写",
+      "gdp_growth": "示例：2026E 实际GDP增速，请填写",
+      "inflation": "示例：CPI同比，请填写",
+      "central_bank_decision": "示例：英国央行关注服务通胀、工资增速和经济增长压力。",
+      "major_event": "示例：财政政策、英镑走势、房地产与消费修复情况。",
+      "currency_strength": "示例：GBP 中性，受英国实际利率与美元周期共同影响。",
+      "market_view": "示例：市场关注BoE降息路径、服务通胀粘性与英国增长韧性。"
+    },
     "japan": {
       "name": "日本",
       "rate": "示例：BoJ policy rate 0.50%",
       "gdp_growth": "示例：2026E 实际GDP增速 0.8%",
+      "inflation": "示例：CPI同比，请填写",
       "central_bank_decision": "示例：继续观察工资-通胀循环，市场关注下一次加息窗口。",
       "major_event": "示例：日元贬值压力、进口通胀与疑似汇率干预预期。",
       "currency_strength": "示例：JPY 偏弱但波动大，受美日利差和干预风险共同影响。",
@@ -23,6 +43,7 @@
       "name": "中国（含港澳台）",
       "rate": "示例：中国1Y LPR 3.00%，5Y LPR 3.50%；香港基准利率跟随美元体系。",
       "gdp_growth": "示例：2026E 实际GDP增速 4.5%",
+      "inflation": "示例：CPI同比，请填写",
       "central_bank_decision": "示例：政策重点在稳增长、宽信用、房地产和地方债风险化解。",
       "major_event": "示例：地产链修复、出口韧性、科技产业政策、港股流动性改善。",
       "currency_strength": "示例：CNY/CNH 中性偏弱，关注美元周期、出口结汇和政策引导。",
@@ -32,6 +53,7 @@
       "name": "韩国",
       "rate": "示例：BoK base rate 3.00%",
       "gdp_growth": "示例：2026E 实际GDP增速 2.0%",
+      "inflation": "示例：CPI同比，请填写",
       "central_bank_decision": "示例：通胀回落后具备降息空间，但韩元波动限制过快宽松。",
       "major_event": "示例：半导体周期、AI服务器需求、出口与内需分化。",
       "currency_strength": "示例：KRW 对风险偏好敏感，半导体景气改善时通常获得支撑。",
@@ -41,6 +63,7 @@
       "name": "美国",
       "rate": "示例：Fed funds target range 4.50%–4.75%",
       "gdp_growth": "示例：2026E 实际GDP增速 1.8%",
+      "inflation": "示例：CPI/PCE同比，请填写",
       "central_bank_decision": "示例：联储强调数据依赖，核心通胀和就业决定降息路径。",
       "major_event": "示例：财政赤字、AI投资周期、就业韧性、关税与大选后政策变化。",
       "currency_strength": "示例：USD 中性偏强，仍受高实际利率和避险需求支撑。",
