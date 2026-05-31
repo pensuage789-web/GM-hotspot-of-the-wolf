@@ -1,0 +1,1537 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>西伯利亚灰狼的 Macro Global Hotspot</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --bg-2: #eef3f9;
+      --panel: #ffffff;
+      --panel-2: #f8fbff;
+      --panel-3: #f2f6fb;
+      --border: #d7e0ea;
+      --border-2: #e7edf4;
+      --text: #0f172a;
+      --muted: #64748b;
+      --muted-2: #94a3b8;
+      --accent: #2563eb;
+      --accent-soft: rgba(37, 99, 235, 0.10);
+      --warn: #f59e0b;
+      --warn-soft: rgba(245, 158, 11, 0.14);
+      --good: #059669;
+      --good-soft: rgba(5, 150, 105, 0.12);
+      --shadow: 0 20px 55px rgba(15, 23, 42, 0.08);
+      --shadow-soft: 0 10px 24px rgba(15, 23, 42, 0.05);
+      --map-land: #d7e0eb;
+      --map-stroke: #b6c4d3;
+      --map-grid: rgba(148, 163, 184, 0.14);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(37, 99, 235, 0.05), transparent 28%),
+        linear-gradient(180deg, #f8fbff 0%, #f3f6fa 100%);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+
+    .page {
+      width: min(1440px, calc(100vw - 32px));
+      margin: 0 auto;
+      padding: 18px 0 26px;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: rgba(255,255,255,.82);
+      backdrop-filter: blur(10px);
+      box-shadow: var(--shadow-soft);
+      margin-bottom: 16px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-badge {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #0f172a, #2563eb);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      letter-spacing: .04em;
+      box-shadow: 0 10px 24px rgba(37, 99, 235, 0.18);
+    }
+
+    .brand-copy h1 {
+      margin: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 14px;
+      border-radius: 12px;
+      border: 1px solid #c9d7e6;
+      background: linear-gradient(180deg, #fbfdff 0%, #f2f6fb 100%);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.95), 0 8px 20px rgba(15, 23, 42, 0.05);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", "PingFang SC", "Microsoft YaHei", monospace;
+      font-size: clamp(24px, 3vw, 34px);
+      line-height: 1.05;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      color: #0f172a;
+      text-transform: none;
+    }
+
+    .brand-copy p {
+      margin: 8px 0 0 2px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .topbar-meta {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .terminal-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .terminal-chip strong { color: var(--text); font-weight: 700; }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .stat-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 14px 16px;
+      box-shadow: var(--shadow-soft);
+      min-height: 122px;
+      transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+      cursor: pointer;
+    }
+
+    .stat-card:hover,
+    .stat-card.active {
+      transform: translateY(-2px);
+      border-color: #bfd1ea;
+      box-shadow: var(--shadow);
+    }
+
+    .stat-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .stat-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .tag {
+      padding: 5px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      border: 1px solid transparent;
+    }
+
+    .tag-blue { background: var(--accent-soft); color: var(--accent); border-color: rgba(37, 99, 235, 0.14); }
+    .tag-gold { background: var(--warn-soft); color: #b45309; border-color: rgba(245, 158, 11, 0.18); }
+    .tag-green { background: var(--good-soft); color: var(--good); border-color: rgba(5, 150, 105, 0.15); }
+
+    .stat-main {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .mini-metric small,
+    .mini-metric div:first-child {
+      color: var(--muted-2);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 4px;
+    }
+
+    .mini-metric strong,
+    .mini-metric div:last-child {
+      color: var(--text);
+      font-size: 13px;
+      line-height: 1.45;
+      font-weight: 700;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 2.05fr) minmax(320px, 0.95fr);
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--border-2);
+      background: linear-gradient(180deg, #fcfdff 0%, #f7faff 100%);
+    }
+
+    .panel-title h2,
+    .panel-title h3 {
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: -0.02em;
+    }
+
+    .panel-title p {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .panel-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .pill-btn {
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .map-wrap {
+      padding: 16px;
+    }
+
+    .map-frame {
+      position: relative;
+      border-radius: 20px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background:
+        linear-gradient(var(--map-grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--map-grid) 1px, transparent 1px),
+        linear-gradient(180deg, #fbfdff 0%, #f5f8fc 100%);
+      background-size: 34px 34px, 34px 34px, auto;
+      min-height: 620px;
+    }
+
+    svg {
+      display: block;
+      width: 100%;
+      height: auto;
+      min-height: 620px;
+    }
+
+    .map-title {
+      font-size: 12px;
+      letter-spacing: 0.12em;
+      fill: #94a3b8;
+      font-weight: 800;
+    }
+
+    .map-subtitle {
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      fill: #a0aec0;
+      font-weight: 600;
+    }
+
+    .pixel-land rect {
+      fill: var(--map-land);
+      stroke: var(--map-stroke);
+      stroke-width: 1.15;
+      stroke-linejoin: round;
+      stroke-linecap: round;
+      shape-rendering: crispEdges;
+    }
+
+    .pixel-land rect.alt {
+      fill: #cdd8e4;
+    }
+
+    .latline, .lonline {
+      stroke: rgba(148, 163, 184, 0.18);
+      stroke-width: 1;
+      stroke-dasharray: 4 6;
+    }
+
+    .hotspot .shape {
+      fill: var(--accent-soft);
+      stroke: rgba(37, 99, 235, 0.64);
+      stroke-width: 1.5;
+      transition: fill 160ms ease, stroke 160ms ease, filter 160ms ease;
+    }
+
+    .hotspot .core {
+      fill: var(--accent);
+      stroke: white;
+      stroke-width: 2;
+      transition: fill 160ms ease, r 160ms ease;
+    }
+
+    .hotspot:hover .shape,
+    .hotspot.active .shape,
+    .hotspot.locked .shape {
+      fill: var(--warn-soft);
+      stroke: rgba(245, 158, 11, 0.9);
+      filter: drop-shadow(0 12px 28px rgba(245, 158, 11, 0.25));
+    }
+
+    .hotspot:hover .core,
+    .hotspot.active .core,
+    .hotspot.locked .core {
+      fill: var(--warn);
+      r: 7;
+    }
+
+    .region-label {
+      pointer-events: none;
+      fill: #334155;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: .02em;
+    }
+
+    .map-note {
+      position: absolute;
+      left: 18px;
+      bottom: 16px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .note-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.88);
+      color: var(--muted);
+      backdrop-filter: blur(8px);
+    }
+
+    .dot {
+      width: 9px; height: 9px; border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 0 0 5px var(--accent-soft);
+    }
+
+    .dot.warn {
+      background: var(--warn);
+      box-shadow: 0 0 0 5px var(--warn-soft);
+    }
+
+    .side-panel {
+      display: flex;
+      flex-direction: column;
+      min-height: 100%;
+    }
+
+    .detail-hero {
+      padding: 18px;
+      border-bottom: 1px solid var(--border-2);
+      background: linear-gradient(180deg, #fcfdff 0%, #f7faff 100%);
+    }
+
+    .eyebrow {
+      color: var(--accent);
+      font-size: 11px;
+      letter-spacing: 0.10em;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .detail-hero h3 {
+      margin: 0 0 6px;
+      font-size: 24px;
+      letter-spacing: -0.03em;
+    }
+
+    .detail-hero p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.7;
+      font-size: 13px;
+    }
+
+    .detail-tags {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+    }
+
+    .detail-body {
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .info-card {
+      border: 1px solid var(--border-2);
+      background: var(--panel-2);
+      border-radius: 16px;
+      padding: 12px 12px 11px;
+    }
+
+    .info-card .k {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted-2);
+      font-weight: 700;
+      margin-bottom: 7px;
+    }
+
+    .info-card .v {
+      font-size: 13px;
+      line-height: 1.65;
+      color: var(--text);
+    }
+
+    .region-list {
+      padding: 0 14px 14px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .region-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      padding: 11px 12px;
+      border: 1px solid var(--border-2);
+      border-radius: 14px;
+      background: #fff;
+      cursor: pointer;
+      transition: border-color 140ms ease, background 140ms ease, transform 140ms ease;
+    }
+
+    .region-row:hover,
+    .region-row.active {
+      background: #f9fbff;
+      border-color: #bfd1ea;
+      transform: translateY(-1px);
+    }
+
+    .region-row b {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 3px;
+    }
+
+    .region-row span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .bottom-grid {
+      display: grid;
+      grid-template-columns: 1.05fr 1fr;
+      gap: 16px;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      box-shadow: var(--shadow-soft);
+      overflow: hidden;
+    }
+
+    .card-head {
+      padding: 15px 18px;
+      border-bottom: 1px solid var(--border-2);
+      background: linear-gradient(180deg, #fcfdff 0%, #f7faff 100%);
+    }
+
+    .card-head h3 {
+      margin: 0;
+      font-size: 16px;
+      letter-spacing: -0.02em;
+    }
+
+    .card-head p {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .card-body {
+      padding: 16px 18px 18px;
+    }
+
+    .maintenance-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .maintenance-item {
+      border: 1px solid var(--border-2);
+      border-radius: 16px;
+      background: var(--panel-2);
+      padding: 12px 13px;
+    }
+
+    .maintenance-item strong {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 13px;
+    }
+
+    .maintenance-item p,
+    .maintenance-item li,
+    .data-table td {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    code {
+      color: #1d4ed8;
+      background: #eff6ff;
+      border: 1px solid #dbeafe;
+      border-radius: 8px;
+      padding: 2px 6px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.92em;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .data-table td {
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border-2);
+      vertical-align: top;
+    }
+
+    .data-table td:first-child {
+      width: 135px;
+      color: var(--text);
+      font-weight: 700;
+      padding-right: 12px;
+    }
+
+    .ticker {
+      margin-top: 16px;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: linear-gradient(90deg, #0f172a, #111f3d);
+      color: #e2e8f0;
+      overflow: hidden;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .ticker-track {
+      display: inline-flex;
+      gap: 28px;
+      white-space: nowrap;
+      padding: 12px 18px;
+      animation: tickerMove 35s linear infinite;
+      min-width: 100%;
+    }
+
+    .ticker-item {
+      font-size: 13px;
+      color: #cbd5e1;
+    }
+
+    .ticker-item strong {
+      color: #fff;
+      margin-right: 8px;
+    }
+
+    @keyframes tickerMove {
+      from { transform: translateX(0); }
+      to { transform: translateX(-50%); }
+    }
+
+    @media (max-width: 1180px) {
+      .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .layout { grid-template-columns: 1fr; }
+      .bottom-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 720px) {
+      .page { width: min(100vw - 18px, 1440px); }
+      .topbar { flex-direction: column; align-items: flex-start; }
+      .topbar-meta { justify-content: flex-start; }
+      .stats-grid { grid-template-columns: 1fr; }
+      .panel-header { flex-direction: column; align-items: flex-start; }
+      .map-frame, svg { min-height: 420px; }
+      .bottom-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="topbar">
+      <div class="brand">
+        <div class="brand-badge">GM</div>
+        <div class="brand-copy">
+          <h1>西伯利亚灰狼的 Macro Global Hotspot</h1>
+          <p>世界地区宏观热点终端 ｜ Hover 或 Click 聚焦五大核心区域 ｜ 数据维护继续使用本地 JSON</p>
+        </div>
+      </div>
+      <div class="topbar-meta">
+        <div class="terminal-chip">DATA DATE <strong id="lastUpdated">读取中</strong></div>
+        <div class="terminal-chip">FOCUS <strong>EU · JP · CN · KR · US</strong></div>
+        <div class="terminal-chip">MODE <strong>Interactive Map</strong></div>
+      </div>
+    </section>
+
+    <section class="stats-grid" id="statsGrid"></section>
+
+    <section class="layout">
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <h2>Global Hotspots Map</h2>
+            <p>鼠标移入可预览，点击区域可锁定右侧详情。地图仅聚焦你关心的五个核心宏观区域。</p>
+          </div>
+          <div class="panel-actions">
+            <div class="pill-btn">Hover = Preview</div>
+            <div class="pill-btn">Click = Lock</div>
+            <div class="pill-btn">JSON = Editable</div>
+          </div>
+        </div>
+
+        <div class="map-wrap">
+          <div class="map-frame" id="mapFrame">
+            <svg viewBox="0 0 1200 640" role="img" aria-label="World macro hotspot map">
+              <text x="32" y="38" class="map-title">WORLD MACRO HOTSPOTS</text>
+              <text x="32" y="58" class="map-subtitle">MACRO OVERVIEW · RATES · GDP · CENTRAL BANK · FX · MARKET VIEW</text>
+
+              <line x1="0" y1="160" x2="1200" y2="160" class="latline"/>
+              <line x1="0" y1="320" x2="1200" y2="320" class="latline"/>
+              <line x1="0" y1="480" x2="1200" y2="480" class="latline"/>
+              <line x1="240" y1="0" x2="240" y2="640" class="lonline"/>
+              <line x1="480" y1="0" x2="480" y2="640" class="lonline"/>
+              <line x1="720" y1="0" x2="720" y2="640" class="lonline"/>
+              <line x1="960" y1="0" x2="960" y2="640" class="lonline"/>
+
+              <g class="pixel-land">
+                <rect x="182" y="84" width="14" height="14" class="alt"/>
+                <rect x="196" y="84" width="14" height="14"/>
+                <rect x="210" y="84" width="14" height="14" class="alt"/>
+                <rect x="224" y="84" width="14" height="14"/>
+                <rect x="168" y="98" width="14" height="14" class="alt"/>
+                <rect x="182" y="98" width="14" height="14"/>
+                <rect x="196" y="98" width="14" height="14" class="alt"/>
+                <rect x="210" y="98" width="14" height="14"/>
+                <rect x="224" y="98" width="14" height="14" class="alt"/>
+                <rect x="238" y="98" width="14" height="14"/>
+                <rect x="168" y="112" width="14" height="14"/>
+                <rect x="182" y="112" width="14" height="14" class="alt"/>
+                <rect x="196" y="112" width="14" height="14"/>
+                <rect x="210" y="112" width="14" height="14" class="alt"/>
+                <rect x="224" y="112" width="14" height="14"/>
+                <rect x="406" y="112" width="14" height="14" class="alt"/>
+                <rect x="420" y="112" width="14" height="14"/>
+                <rect x="112" y="126" width="14" height="14" class="alt"/>
+                <rect x="126" y="126" width="14" height="14"/>
+                <rect x="140" y="126" width="14" height="14" class="alt"/>
+                <rect x="154" y="126" width="14" height="14"/>
+                <rect x="168" y="126" width="14" height="14" class="alt"/>
+                <rect x="182" y="126" width="14" height="14"/>
+                <rect x="196" y="126" width="14" height="14" class="alt"/>
+                <rect x="210" y="126" width="14" height="14"/>
+                <rect x="448" y="126" width="14" height="14" class="alt"/>
+                <rect x="462" y="126" width="14" height="14"/>
+                <rect x="98" y="140" width="14" height="14" class="alt"/>
+                <rect x="112" y="140" width="14" height="14"/>
+                <rect x="126" y="140" width="14" height="14" class="alt"/>
+                <rect x="140" y="140" width="14" height="14"/>
+                <rect x="154" y="140" width="14" height="14" class="alt"/>
+                <rect x="168" y="140" width="14" height="14"/>
+                <rect x="182" y="140" width="14" height="14" class="alt"/>
+                <rect x="196" y="140" width="14" height="14"/>
+                <rect x="210" y="140" width="14" height="14" class="alt"/>
+                <rect x="224" y="140" width="14" height="14"/>
+                <rect x="238" y="140" width="14" height="14" class="alt"/>
+                <rect x="476" y="140" width="14" height="14"/>
+                <rect x="490" y="140" width="14" height="14" class="alt"/>
+                <rect x="504" y="140" width="14" height="14"/>
+                <rect x="434" y="140" width="14" height="14" class="alt"/>
+                <rect x="448" y="140" width="14" height="14"/>
+                <rect x="546" y="140" width="14" height="14" class="alt"/>
+                <rect x="560" y="140" width="14" height="14"/>
+                <rect x="574" y="140" width="14" height="14" class="alt"/>
+                <rect x="588" y="140" width="14" height="14"/>
+                <rect x="602" y="140" width="14" height="14" class="alt"/>
+                <rect x="616" y="140" width="14" height="14"/>
+                <rect x="630" y="140" width="14" height="14" class="alt"/>
+                <rect x="644" y="140" width="14" height="14"/>
+                <rect x="658" y="140" width="14" height="14" class="alt"/>
+                <rect x="672" y="140" width="14" height="14"/>
+                <rect x="686" y="140" width="14" height="14" class="alt"/>
+                <rect x="700" y="140" width="14" height="14"/>
+                <rect x="98" y="154" width="14" height="14"/>
+                <rect x="112" y="154" width="14" height="14" class="alt"/>
+                <rect x="126" y="154" width="14" height="14"/>
+                <rect x="140" y="154" width="14" height="14" class="alt"/>
+                <rect x="154" y="154" width="14" height="14"/>
+                <rect x="168" y="154" width="14" height="14" class="alt"/>
+                <rect x="182" y="154" width="14" height="14"/>
+                <rect x="196" y="154" width="14" height="14" class="alt"/>
+                <rect x="210" y="154" width="14" height="14"/>
+                <rect x="224" y="154" width="14" height="14" class="alt"/>
+                <rect x="238" y="154" width="14" height="14"/>
+                <rect x="252" y="154" width="14" height="14" class="alt"/>
+                <rect x="462" y="154" width="14" height="14"/>
+                <rect x="476" y="154" width="14" height="14" class="alt"/>
+                <rect x="490" y="154" width="14" height="14"/>
+                <rect x="504" y="154" width="14" height="14" class="alt"/>
+                <rect x="518" y="154" width="14" height="14"/>
+                <rect x="532" y="154" width="14" height="14" class="alt"/>
+                <rect x="434" y="154" width="14" height="14"/>
+                <rect x="448" y="154" width="14" height="14" class="alt"/>
+                <rect x="560" y="154" width="14" height="14" class="alt"/>
+                <rect x="574" y="154" width="14" height="14"/>
+                <rect x="588" y="154" width="14" height="14" class="alt"/>
+                <rect x="602" y="154" width="14" height="14"/>
+                <rect x="616" y="154" width="14" height="14" class="alt"/>
+                <rect x="630" y="154" width="14" height="14"/>
+                <rect x="644" y="154" width="14" height="14" class="alt"/>
+                <rect x="658" y="154" width="14" height="14"/>
+                <rect x="672" y="154" width="14" height="14" class="alt"/>
+                <rect x="686" y="154" width="14" height="14"/>
+                <rect x="700" y="154" width="14" height="14" class="alt"/>
+                <rect x="714" y="154" width="14" height="14"/>
+                <rect x="728" y="154" width="14" height="14" class="alt"/>
+                <rect x="742" y="154" width="14" height="14"/>
+                <rect x="756" y="154" width="14" height="14" class="alt"/>
+                <rect x="84" y="168" width="14" height="14"/>
+                <rect x="98" y="168" width="14" height="14" class="alt"/>
+                <rect x="112" y="168" width="14" height="14"/>
+                <rect x="126" y="168" width="14" height="14" class="alt"/>
+                <rect x="140" y="168" width="14" height="14"/>
+                <rect x="154" y="168" width="14" height="14" class="alt"/>
+                <rect x="168" y="168" width="14" height="14"/>
+                <rect x="182" y="168" width="14" height="14" class="alt"/>
+                <rect x="196" y="168" width="14" height="14"/>
+                <rect x="210" y="168" width="14" height="14" class="alt"/>
+                <rect x="224" y="168" width="14" height="14"/>
+                <rect x="238" y="168" width="14" height="14" class="alt"/>
+                <rect x="252" y="168" width="14" height="14"/>
+                <rect x="462" y="168" width="14" height="14" class="alt"/>
+                <rect x="476" y="168" width="14" height="14"/>
+                <rect x="490" y="168" width="14" height="14" class="alt"/>
+                <rect x="504" y="168" width="14" height="14"/>
+                <rect x="518" y="168" width="14" height="14" class="alt"/>
+                <rect x="532" y="168" width="14" height="14"/>
+                <rect x="546" y="168" width="14" height="14" class="alt"/>
+                <rect x="560" y="168" width="14" height="14"/>
+                <rect x="574" y="168" width="14" height="14" class="alt"/>
+                <rect x="588" y="168" width="14" height="14"/>
+                <rect x="602" y="168" width="14" height="14" class="alt"/>
+                <rect x="616" y="168" width="14" height="14"/>
+                <rect x="630" y="168" width="14" height="14" class="alt"/>
+                <rect x="644" y="168" width="14" height="14"/>
+                <rect x="658" y="168" width="14" height="14" class="alt"/>
+                <rect x="672" y="168" width="14" height="14"/>
+                <rect x="686" y="168" width="14" height="14" class="alt"/>
+                <rect x="700" y="168" width="14" height="14"/>
+                <rect x="714" y="168" width="14" height="14" class="alt"/>
+                <rect x="728" y="168" width="14" height="14"/>
+                <rect x="742" y="168" width="14" height="14" class="alt"/>
+                <rect x="756" y="168" width="14" height="14"/>
+                <rect x="770" y="168" width="14" height="14" class="alt"/>
+                <rect x="784" y="168" width="14" height="14"/>
+                <rect x="798" y="168" width="14" height="14" class="alt"/>
+                <rect x="98" y="182" width="14" height="14"/>
+                <rect x="112" y="182" width="14" height="14" class="alt"/>
+                <rect x="126" y="182" width="14" height="14"/>
+                <rect x="140" y="182" width="14" height="14" class="alt"/>
+                <rect x="154" y="182" width="14" height="14"/>
+                <rect x="168" y="182" width="14" height="14" class="alt"/>
+                <rect x="182" y="182" width="14" height="14"/>
+                <rect x="196" y="182" width="14" height="14" class="alt"/>
+                <rect x="210" y="182" width="14" height="14"/>
+                <rect x="224" y="182" width="14" height="14" class="alt"/>
+                <rect x="238" y="182" width="14" height="14"/>
+                <rect x="252" y="182" width="14" height="14" class="alt"/>
+                <rect x="266" y="182" width="14" height="14"/>
+                <rect x="476" y="182" width="14" height="14" class="alt"/>
+                <rect x="490" y="182" width="14" height="14"/>
+                <rect x="504" y="182" width="14" height="14" class="alt"/>
+                <rect x="518" y="182" width="14" height="14"/>
+                <rect x="532" y="182" width="14" height="14" class="alt"/>
+                <rect x="546" y="182" width="14" height="14"/>
+                <rect x="560" y="182" width="14" height="14" class="alt"/>
+                <rect x="574" y="182" width="14" height="14"/>
+                <rect x="588" y="182" width="14" height="14" class="alt"/>
+                <rect x="602" y="182" width="14" height="14"/>
+                <rect x="616" y="182" width="14" height="14" class="alt"/>
+                <rect x="630" y="182" width="14" height="14"/>
+                <rect x="644" y="182" width="14" height="14" class="alt"/>
+                <rect x="658" y="182" width="14" height="14"/>
+                <rect x="672" y="182" width="14" height="14" class="alt"/>
+                <rect x="686" y="182" width="14" height="14"/>
+                <rect x="700" y="182" width="14" height="14" class="alt"/>
+                <rect x="714" y="182" width="14" height="14"/>
+                <rect x="728" y="182" width="14" height="14" class="alt"/>
+                <rect x="742" y="182" width="14" height="14"/>
+                <rect x="756" y="182" width="14" height="14" class="alt"/>
+                <rect x="770" y="182" width="14" height="14"/>
+                <rect x="784" y="182" width="14" height="14" class="alt"/>
+                <rect x="798" y="182" width="14" height="14"/>
+                <rect x="812" y="182" width="14" height="14" class="alt"/>
+                <rect x="826" y="182" width="14" height="14"/>
+                <rect x="840" y="182" width="14" height="14" class="alt"/>
+                <rect x="854" y="182" width="14" height="14"/>
+                <rect x="112" y="196" width="14" height="14"/>
+                <rect x="126" y="196" width="14" height="14" class="alt"/>
+                <rect x="140" y="196" width="14" height="14"/>
+                <rect x="154" y="196" width="14" height="14" class="alt"/>
+                <rect x="168" y="196" width="14" height="14"/>
+                <rect x="182" y="196" width="14" height="14" class="alt"/>
+                <rect x="196" y="196" width="14" height="14"/>
+                <rect x="210" y="196" width="14" height="14" class="alt"/>
+                <rect x="224" y="196" width="14" height="14"/>
+                <rect x="238" y="196" width="14" height="14" class="alt"/>
+                <rect x="252" y="196" width="14" height="14"/>
+                <rect x="504" y="196" width="14" height="14"/>
+                <rect x="518" y="196" width="14" height="14" class="alt"/>
+                <rect x="532" y="196" width="14" height="14"/>
+                <rect x="546" y="196" width="14" height="14" class="alt"/>
+                <rect x="588" y="196" width="14" height="14"/>
+                <rect x="602" y="196" width="14" height="14" class="alt"/>
+                <rect x="616" y="196" width="14" height="14"/>
+                <rect x="630" y="196" width="14" height="14" class="alt"/>
+                <rect x="644" y="196" width="14" height="14"/>
+                <rect x="658" y="196" width="14" height="14" class="alt"/>
+                <rect x="672" y="196" width="14" height="14"/>
+                <rect x="686" y="196" width="14" height="14" class="alt"/>
+                <rect x="700" y="196" width="14" height="14"/>
+                <rect x="714" y="196" width="14" height="14" class="alt"/>
+                <rect x="728" y="196" width="14" height="14"/>
+                <rect x="742" y="196" width="14" height="14" class="alt"/>
+                <rect x="756" y="196" width="14" height="14"/>
+                <rect x="770" y="196" width="14" height="14" class="alt"/>
+                <rect x="784" y="196" width="14" height="14"/>
+                <rect x="798" y="196" width="14" height="14" class="alt"/>
+                <rect x="812" y="196" width="14" height="14"/>
+                <rect x="826" y="196" width="14" height="14" class="alt"/>
+                <rect x="840" y="196" width="14" height="14"/>
+                <rect x="854" y="196" width="14" height="14" class="alt"/>
+                <rect x="868" y="196" width="14" height="14"/>
+                <rect x="882" y="196" width="14" height="14" class="alt"/>
+                <rect x="868" y="196" width="14" height="14"/>
+                <rect x="882" y="196" width="14" height="14" class="alt"/>
+                <rect x="140" y="210" width="14" height="14" class="alt"/>
+                <rect x="154" y="210" width="14" height="14"/>
+                <rect x="168" y="210" width="14" height="14" class="alt"/>
+                <rect x="182" y="210" width="14" height="14"/>
+                <rect x="196" y="210" width="14" height="14" class="alt"/>
+                <rect x="210" y="210" width="14" height="14"/>
+                <rect x="224" y="210" width="14" height="14" class="alt"/>
+                <rect x="238" y="210" width="14" height="14"/>
+                <rect x="504" y="210" width="14" height="14" class="alt"/>
+                <rect x="518" y="210" width="14" height="14"/>
+                <rect x="532" y="210" width="14" height="14" class="alt"/>
+                <rect x="546" y="210" width="14" height="14"/>
+                <rect x="560" y="210" width="14" height="14" class="alt"/>
+                <rect x="602" y="210" width="14" height="14"/>
+                <rect x="616" y="210" width="14" height="14" class="alt"/>
+                <rect x="630" y="210" width="14" height="14"/>
+                <rect x="644" y="210" width="14" height="14" class="alt"/>
+                <rect x="658" y="210" width="14" height="14"/>
+                <rect x="672" y="210" width="14" height="14" class="alt"/>
+                <rect x="686" y="210" width="14" height="14"/>
+                <rect x="700" y="210" width="14" height="14" class="alt"/>
+                <rect x="714" y="210" width="14" height="14"/>
+                <rect x="728" y="210" width="14" height="14" class="alt"/>
+                <rect x="742" y="210" width="14" height="14"/>
+                <rect x="756" y="210" width="14" height="14" class="alt"/>
+                <rect x="770" y="210" width="14" height="14"/>
+                <rect x="784" y="210" width="14" height="14" class="alt"/>
+                <rect x="798" y="210" width="14" height="14"/>
+                <rect x="812" y="210" width="14" height="14" class="alt"/>
+                <rect x="826" y="210" width="14" height="14"/>
+                <rect x="840" y="210" width="14" height="14" class="alt"/>
+                <rect x="854" y="210" width="14" height="14"/>
+                <rect x="868" y="210" width="14" height="14" class="alt"/>
+                <rect x="882" y="210" width="14" height="14"/>
+                <rect x="896" y="210" width="14" height="14" class="alt"/>
+                <rect x="868" y="210" width="14" height="14" class="alt"/>
+                <rect x="882" y="210" width="14" height="14"/>
+                <rect x="910" y="210" width="14" height="14"/>
+                <rect x="924" y="210" width="14" height="14" class="alt"/>
+                <rect x="168" y="224" width="14" height="14"/>
+                <rect x="182" y="224" width="14" height="14" class="alt"/>
+                <rect x="196" y="224" width="14" height="14"/>
+                <rect x="210" y="224" width="14" height="14" class="alt"/>
+                <rect x="490" y="224" width="14" height="14" class="alt"/>
+                <rect x="504" y="224" width="14" height="14"/>
+                <rect x="518" y="224" width="14" height="14" class="alt"/>
+                <rect x="532" y="224" width="14" height="14"/>
+                <rect x="546" y="224" width="14" height="14" class="alt"/>
+                <rect x="560" y="224" width="14" height="14"/>
+                <rect x="574" y="224" width="14" height="14" class="alt"/>
+                <rect x="630" y="224" width="14" height="14" class="alt"/>
+                <rect x="644" y="224" width="14" height="14"/>
+                <rect x="658" y="224" width="14" height="14" class="alt"/>
+                <rect x="672" y="224" width="14" height="14"/>
+                <rect x="686" y="224" width="14" height="14" class="alt"/>
+                <rect x="700" y="224" width="14" height="14"/>
+                <rect x="714" y="224" width="14" height="14" class="alt"/>
+                <rect x="728" y="224" width="14" height="14"/>
+                <rect x="742" y="224" width="14" height="14" class="alt"/>
+                <rect x="756" y="224" width="14" height="14"/>
+                <rect x="770" y="224" width="14" height="14" class="alt"/>
+                <rect x="784" y="224" width="14" height="14"/>
+                <rect x="798" y="224" width="14" height="14" class="alt"/>
+                <rect x="812" y="224" width="14" height="14"/>
+                <rect x="826" y="224" width="14" height="14" class="alt"/>
+                <rect x="840" y="224" width="14" height="14"/>
+                <rect x="854" y="224" width="14" height="14" class="alt"/>
+                <rect x="868" y="224" width="14" height="14"/>
+                <rect x="882" y="224" width="14" height="14" class="alt"/>
+                <rect x="896" y="224" width="14" height="14"/>
+                <rect x="910" y="224" width="14" height="14" class="alt"/>
+                <rect x="882" y="224" width="14" height="14" class="alt"/>
+                <rect x="896" y="224" width="14" height="14"/>
+                <rect x="924" y="224" width="14" height="14"/>
+                <rect x="938" y="224" width="14" height="14" class="alt"/>
+                <rect x="182" y="238" width="14" height="14"/>
+                <rect x="196" y="238" width="14" height="14" class="alt"/>
+                <rect x="210" y="238" width="14" height="14"/>
+                <rect x="224" y="238" width="14" height="14" class="alt"/>
+                <rect x="238" y="238" width="14" height="14"/>
+                <rect x="252" y="238" width="14" height="14" class="alt"/>
+                <rect x="490" y="238" width="14" height="14"/>
+                <rect x="504" y="238" width="14" height="14" class="alt"/>
+                <rect x="518" y="238" width="14" height="14"/>
+                <rect x="532" y="238" width="14" height="14" class="alt"/>
+                <rect x="546" y="238" width="14" height="14"/>
+                <rect x="560" y="238" width="14" height="14" class="alt"/>
+                <rect x="574" y="238" width="14" height="14"/>
+                <rect x="644" y="238" width="14" height="14" class="alt"/>
+                <rect x="658" y="238" width="14" height="14"/>
+                <rect x="672" y="238" width="14" height="14" class="alt"/>
+                <rect x="686" y="238" width="14" height="14"/>
+                <rect x="700" y="238" width="14" height="14" class="alt"/>
+                <rect x="714" y="238" width="14" height="14"/>
+                <rect x="728" y="238" width="14" height="14" class="alt"/>
+                <rect x="742" y="238" width="14" height="14"/>
+                <rect x="756" y="238" width="14" height="14" class="alt"/>
+                <rect x="770" y="238" width="14" height="14"/>
+                <rect x="784" y="238" width="14" height="14" class="alt"/>
+                <rect x="798" y="238" width="14" height="14"/>
+                <rect x="812" y="238" width="14" height="14" class="alt"/>
+                <rect x="826" y="238" width="14" height="14"/>
+                <rect x="840" y="238" width="14" height="14" class="alt"/>
+                <rect x="854" y="238" width="14" height="14"/>
+                <rect x="868" y="238" width="14" height="14" class="alt"/>
+                <rect x="882" y="238" width="14" height="14"/>
+                <rect x="896" y="238" width="14" height="14" class="alt"/>
+                <rect x="672" y="238" width="14" height="14" class="alt"/>
+                <rect x="686" y="238" width="14" height="14"/>
+                <rect x="700" y="238" width="14" height="14" class="alt"/>
+                <rect x="882" y="238" width="14" height="14"/>
+                <rect x="896" y="238" width="14" height="14" class="alt"/>
+                <rect x="938" y="238" width="14" height="14"/>
+                <rect x="952" y="238" width="14" height="14" class="alt"/>
+                <rect x="196" y="252" width="14" height="14"/>
+                <rect x="210" y="252" width="14" height="14" class="alt"/>
+                <rect x="224" y="252" width="14" height="14"/>
+                <rect x="238" y="252" width="14" height="14" class="alt"/>
+                <rect x="252" y="252" width="14" height="14"/>
+                <rect x="266" y="252" width="14" height="14" class="alt"/>
+                <rect x="504" y="252" width="14" height="14"/>
+                <rect x="518" y="252" width="14" height="14" class="alt"/>
+                <rect x="532" y="252" width="14" height="14"/>
+                <rect x="546" y="252" width="14" height="14" class="alt"/>
+                <rect x="560" y="252" width="14" height="14"/>
+                <rect x="574" y="252" width="14" height="14" class="alt"/>
+                <rect x="588" y="252" width="14" height="14"/>
+                <rect x="658" y="252" width="14" height="14" class="alt"/>
+                <rect x="672" y="252" width="14" height="14"/>
+                <rect x="686" y="252" width="14" height="14" class="alt"/>
+                <rect x="700" y="252" width="14" height="14"/>
+                <rect x="714" y="252" width="14" height="14" class="alt"/>
+                <rect x="728" y="252" width="14" height="14"/>
+                <rect x="742" y="252" width="14" height="14" class="alt"/>
+                <rect x="756" y="252" width="14" height="14"/>
+                <rect x="770" y="252" width="14" height="14" class="alt"/>
+                <rect x="784" y="252" width="14" height="14"/>
+                <rect x="798" y="252" width="14" height="14" class="alt"/>
+                <rect x="812" y="252" width="14" height="14"/>
+                <rect x="826" y="252" width="14" height="14" class="alt"/>
+                <rect x="840" y="252" width="14" height="14"/>
+                <rect x="854" y="252" width="14" height="14" class="alt"/>
+                <rect x="868" y="252" width="14" height="14"/>
+                <rect x="686" y="252" width="14" height="14" class="alt"/>
+                <rect x="700" y="252" width="14" height="14"/>
+                <rect x="714" y="252" width="14" height="14" class="alt"/>
+                <rect x="952" y="252" width="14" height="14"/>
+                <rect x="966" y="252" width="14" height="14" class="alt"/>
+                <rect x="266" y="266" width="14" height="14"/>
+                <rect x="280" y="266" width="14" height="14" class="alt"/>
+                <rect x="504" y="266" width="14" height="14" class="alt"/>
+                <rect x="518" y="266" width="14" height="14"/>
+                <rect x="532" y="266" width="14" height="14" class="alt"/>
+                <rect x="546" y="266" width="14" height="14"/>
+                <rect x="560" y="266" width="14" height="14" class="alt"/>
+                <rect x="574" y="266" width="14" height="14"/>
+                <rect x="588" y="266" width="14" height="14" class="alt"/>
+                <rect x="672" y="266" width="14" height="14" class="alt"/>
+                <rect x="686" y="266" width="14" height="14"/>
+                <rect x="700" y="266" width="14" height="14" class="alt"/>
+                <rect x="714" y="266" width="14" height="14"/>
+                <rect x="728" y="266" width="14" height="14" class="alt"/>
+                <rect x="742" y="266" width="14" height="14"/>
+                <rect x="756" y="266" width="14" height="14" class="alt"/>
+                <rect x="770" y="266" width="14" height="14"/>
+                <rect x="784" y="266" width="14" height="14" class="alt"/>
+                <rect x="798" y="266" width="14" height="14"/>
+                <rect x="812" y="266" width="14" height="14" class="alt"/>
+                <rect x="826" y="266" width="14" height="14"/>
+                <rect x="840" y="266" width="14" height="14" class="alt"/>
+                <rect x="854" y="266" width="14" height="14"/>
+                <rect x="700" y="266" width="14" height="14" class="alt"/>
+                <rect x="714" y="266" width="14" height="14"/>
+                <rect x="728" y="266" width="14" height="14" class="alt"/>
+                <rect x="952" y="266" width="14" height="14" class="alt"/>
+                <rect x="966" y="266" width="14" height="14"/>
+                <rect x="868" y="266" width="14" height="14" class="alt"/>
+                <rect x="882" y="266" width="14" height="14"/>
+                <rect x="280" y="280" width="14" height="14"/>
+                <rect x="294" y="280" width="14" height="14" class="alt"/>
+                <rect x="308" y="280" width="14" height="14"/>
+                <rect x="322" y="280" width="14" height="14" class="alt"/>
+                <rect x="504" y="280" width="14" height="14"/>
+                <rect x="518" y="280" width="14" height="14" class="alt"/>
+                <rect x="532" y="280" width="14" height="14"/>
+                <rect x="546" y="280" width="14" height="14" class="alt"/>
+                <rect x="560" y="280" width="14" height="14"/>
+                <rect x="574" y="280" width="14" height="14" class="alt"/>
+                <rect x="588" y="280" width="14" height="14"/>
+                <rect x="686" y="280" width="14" height="14" class="alt"/>
+                <rect x="700" y="280" width="14" height="14"/>
+                <rect x="714" y="280" width="14" height="14" class="alt"/>
+                <rect x="728" y="280" width="14" height="14"/>
+                <rect x="742" y="280" width="14" height="14" class="alt"/>
+                <rect x="756" y="280" width="14" height="14"/>
+                <rect x="770" y="280" width="14" height="14" class="alt"/>
+                <rect x="784" y="280" width="14" height="14"/>
+                <rect x="798" y="280" width="14" height="14" class="alt"/>
+                <rect x="812" y="280" width="14" height="14"/>
+                <rect x="826" y="280" width="14" height="14" class="alt"/>
+                <rect x="714" y="280" width="14" height="14" class="alt"/>
+                <rect x="728" y="280" width="14" height="14"/>
+                <rect x="742" y="280" width="14" height="14" class="alt"/>
+                <rect x="924" y="280" width="14" height="14"/>
+                <rect x="938" y="280" width="14" height="14" class="alt"/>
+                <rect x="868" y="280" width="14" height="14"/>
+                <rect x="882" y="280" width="14" height="14" class="alt"/>
+                <rect x="294" y="294" width="14" height="14"/>
+                <rect x="308" y="294" width="14" height="14" class="alt"/>
+                <rect x="322" y="294" width="14" height="14"/>
+                <rect x="336" y="294" width="14" height="14" class="alt"/>
+                <rect x="518" y="294" width="14" height="14"/>
+                <rect x="532" y="294" width="14" height="14" class="alt"/>
+                <rect x="546" y="294" width="14" height="14"/>
+                <rect x="560" y="294" width="14" height="14" class="alt"/>
+                <rect x="574" y="294" width="14" height="14"/>
+                <rect x="588" y="294" width="14" height="14" class="alt"/>
+                <rect x="700" y="294" width="14" height="14" class="alt"/>
+                <rect x="714" y="294" width="14" height="14"/>
+                <rect x="728" y="294" width="14" height="14" class="alt"/>
+                <rect x="742" y="294" width="14" height="14"/>
+                <rect x="756" y="294" width="14" height="14" class="alt"/>
+                <rect x="770" y="294" width="14" height="14"/>
+                <rect x="784" y="294" width="14" height="14" class="alt"/>
+                <rect x="798" y="294" width="14" height="14"/>
+                <rect x="728" y="294" width="14" height="14" class="alt"/>
+                <rect x="742" y="294" width="14" height="14"/>
+                <rect x="756" y="294" width="14" height="14" class="alt"/>
+                <rect x="882" y="294" width="14" height="14"/>
+                <rect x="896" y="294" width="14" height="14" class="alt"/>
+                <rect x="294" y="308" width="14" height="14" class="alt"/>
+                <rect x="308" y="308" width="14" height="14"/>
+                <rect x="322" y="308" width="14" height="14" class="alt"/>
+                <rect x="336" y="308" width="14" height="14"/>
+                <rect x="518" y="308" width="14" height="14" class="alt"/>
+                <rect x="532" y="308" width="14" height="14"/>
+                <rect x="546" y="308" width="14" height="14" class="alt"/>
+                <rect x="560" y="308" width="14" height="14"/>
+                <rect x="574" y="308" width="14" height="14" class="alt"/>
+                <rect x="742" y="308" width="14" height="14" class="alt"/>
+                <rect x="756" y="308" width="14" height="14"/>
+                <rect x="770" y="308" width="14" height="14" class="alt"/>
+                <rect x="308" y="322" width="14" height="14" class="alt"/>
+                <rect x="322" y="322" width="14" height="14"/>
+                <rect x="336" y="322" width="14" height="14" class="alt"/>
+                <rect x="350" y="322" width="14" height="14"/>
+                <rect x="518" y="322" width="14" height="14"/>
+                <rect x="532" y="322" width="14" height="14" class="alt"/>
+                <rect x="546" y="322" width="14" height="14"/>
+                <rect x="560" y="322" width="14" height="14" class="alt"/>
+                <rect x="574" y="322" width="14" height="14"/>
+                <rect x="756" y="322" width="14" height="14" class="alt"/>
+                <rect x="770" y="322" width="14" height="14"/>
+                <rect x="756" y="322" width="14" height="14" class="alt"/>
+                <rect x="770" y="322" width="14" height="14"/>
+                <rect x="784" y="322" width="14" height="14" class="alt"/>
+                <rect x="798" y="322" width="14" height="14"/>
+                <rect x="812" y="322" width="14" height="14" class="alt"/>
+                <rect x="308" y="336" width="14" height="14"/>
+                <rect x="322" y="336" width="14" height="14" class="alt"/>
+                <rect x="336" y="336" width="14" height="14"/>
+                <rect x="350" y="336" width="14" height="14" class="alt"/>
+                <rect x="518" y="336" width="14" height="14" class="alt"/>
+                <rect x="532" y="336" width="14" height="14"/>
+                <rect x="546" y="336" width="14" height="14" class="alt"/>
+                <rect x="560" y="336" width="14" height="14"/>
+                <rect x="574" y="336" width="14" height="14" class="alt"/>
+                <rect x="770" y="336" width="14" height="14" class="alt"/>
+                <rect x="784" y="336" width="14" height="14"/>
+                <rect x="798" y="336" width="14" height="14" class="alt"/>
+                <rect x="322" y="350" width="14" height="14"/>
+                <rect x="336" y="350" width="14" height="14" class="alt"/>
+                <rect x="350" y="350" width="14" height="14"/>
+                <rect x="504" y="350" width="14" height="14" class="alt"/>
+                <rect x="518" y="350" width="14" height="14"/>
+                <rect x="532" y="350" width="14" height="14" class="alt"/>
+                <rect x="546" y="350" width="14" height="14"/>
+                <rect x="560" y="350" width="14" height="14" class="alt"/>
+                <rect x="322" y="364" width="14" height="14" class="alt"/>
+                <rect x="336" y="364" width="14" height="14"/>
+                <rect x="350" y="364" width="14" height="14" class="alt"/>
+                <rect x="504" y="364" width="14" height="14"/>
+                <rect x="518" y="364" width="14" height="14" class="alt"/>
+                <rect x="532" y="364" width="14" height="14"/>
+                <rect x="546" y="364" width="14" height="14" class="alt"/>
+                <rect x="560" y="364" width="14" height="14"/>
+                <rect x="308" y="378" width="14" height="14" class="alt"/>
+                <rect x="322" y="378" width="14" height="14"/>
+                <rect x="336" y="378" width="14" height="14" class="alt"/>
+                <rect x="518" y="378" width="14" height="14"/>
+                <rect x="532" y="378" width="14" height="14" class="alt"/>
+                <rect x="546" y="378" width="14" height="14"/>
+                <rect x="308" y="392" width="14" height="14"/>
+                <rect x="322" y="392" width="14" height="14" class="alt"/>
+                <rect x="336" y="392" width="14" height="14"/>
+                <rect x="532" y="392" width="14" height="14"/>
+                <rect x="546" y="392" width="14" height="14" class="alt"/>
+                <rect x="840" y="392" width="14" height="14"/>
+                <rect x="854" y="392" width="14" height="14" class="alt"/>
+                <rect x="868" y="392" width="14" height="14"/>
+                <rect x="882" y="392" width="14" height="14" class="alt"/>
+                <rect x="896" y="392" width="14" height="14"/>
+                <rect x="910" y="392" width="14" height="14" class="alt"/>
+                <rect x="294" y="406" width="14" height="14"/>
+                <rect x="308" y="406" width="14" height="14" class="alt"/>
+                <rect x="322" y="406" width="14" height="14"/>
+                <rect x="826" y="406" width="14" height="14"/>
+                <rect x="840" y="406" width="14" height="14" class="alt"/>
+                <rect x="854" y="406" width="14" height="14"/>
+                <rect x="868" y="406" width="14" height="14" class="alt"/>
+                <rect x="882" y="406" width="14" height="14"/>
+                <rect x="896" y="406" width="14" height="14" class="alt"/>
+                <rect x="910" y="406" width="14" height="14"/>
+                <rect x="924" y="406" width="14" height="14" class="alt"/>
+                <rect x="294" y="420" width="14" height="14" class="alt"/>
+                <rect x="308" y="420" width="14" height="14"/>
+                <rect x="322" y="420" width="14" height="14" class="alt"/>
+                <rect x="826" y="420" width="14" height="14" class="alt"/>
+                <rect x="840" y="420" width="14" height="14"/>
+                <rect x="854" y="420" width="14" height="14" class="alt"/>
+                <rect x="868" y="420" width="14" height="14"/>
+                <rect x="882" y="420" width="14" height="14" class="alt"/>
+                <rect x="896" y="420" width="14" height="14"/>
+                <rect x="910" y="420" width="14" height="14" class="alt"/>
+                <rect x="924" y="420" width="14" height="14"/>
+                <rect x="938" y="420" width="14" height="14" class="alt"/>
+                <rect x="280" y="434" width="14" height="14" class="alt"/>
+                <rect x="294" y="434" width="14" height="14"/>
+                <rect x="308" y="434" width="14" height="14" class="alt"/>
+                <rect x="840" y="434" width="14" height="14" class="alt"/>
+                <rect x="854" y="434" width="14" height="14"/>
+                <rect x="868" y="434" width="14" height="14" class="alt"/>
+                <rect x="882" y="434" width="14" height="14"/>
+                <rect x="896" y="434" width="14" height="14" class="alt"/>
+                <rect x="910" y="434" width="14" height="14"/>
+                <rect x="924" y="434" width="14" height="14" class="alt"/>
+                <rect x="938" y="434" width="14" height="14"/>
+                <rect x="280" y="448" width="14" height="14"/>
+                <rect x="294" y="448" width="14" height="14" class="alt"/>
+                <rect x="854" y="448" width="14" height="14" class="alt"/>
+                <rect x="868" y="448" width="14" height="14"/>
+                <rect x="882" y="448" width="14" height="14" class="alt"/>
+                <rect x="896" y="448" width="14" height="14"/>
+                <rect x="910" y="448" width="14" height="14" class="alt"/>
+                <rect x="924" y="448" width="14" height="14"/>
+                <rect x="966" y="462" width="14" height="14"/>
+                <rect x="980" y="462" width="14" height="14" class="alt"/>
+                <rect x="980" y="476" width="14" height="14"/>
+                <rect x="994" y="476" width="14" height="14" class="alt"/>
+              </g>
+
+              <g class="hotspot" data-region="us">
+                <ellipse class="shape" cx="210" cy="190" rx="92" ry="56"></ellipse>
+                <circle class="core" cx="210" cy="190" r="6"></circle>
+              </g>
+              <text x="150" y="132" class="region-label">美国</text>
+
+              <g class="hotspot" data-region="eurozone">
+                <ellipse class="shape" cx="520" cy="172" rx="58" ry="34"></ellipse>
+                <circle class="core" cx="520" cy="172" r="6"></circle>
+              </g>
+              <text x="486" y="122" class="region-label">欧元区</text>
+
+              <g class="hotspot" data-region="china">
+                <ellipse class="shape" cx="770" cy="214" rx="96" ry="64"></ellipse>
+                <circle class="core" cx="770" cy="214" r="6"></circle>
+              </g>
+              <text x="738" y="164" class="region-label">中国</text>
+
+              <g class="hotspot" data-region="korea">
+                <ellipse class="shape" cx="890" cy="222" rx="18" ry="24"></ellipse>
+                <circle class="core" cx="890" cy="222" r="5"></circle>
+              </g>
+              <text x="900" y="212" class="region-label">韩国</text>
+
+              <g class="hotspot" data-region="japan">
+                <ellipse class="shape" cx="950" cy="236" rx="24" ry="46"></ellipse>
+                <circle class="core" cx="950" cy="236" r="5"></circle>
+              </g>
+              <text x="962" y="190" class="region-label">日本</text>
+            </svg>
+
+            <div class="map-note">
+              <div class="note-chip"><i class="dot"></i>宏观热点区域</div>
+              <div class="note-chip"><i class="dot warn"></i>当前悬停 / 锁定区域</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <aside class="panel side-panel">
+        <div class="detail-hero">
+          <div class="eyebrow">REGION DETAIL</div>
+          <h3 id="detailName">美国</h3>
+          <p id="detailIntro">将鼠标移到地图热点上可实时预览，点击可锁定当前区域。右侧会展示完整宏观信息。</p>
+          <div class="detail-tags">
+            <span class="tag tag-blue" id="tagRate">利率</span>
+            <span class="tag tag-gold" id="tagCurrency">货币强弱</span>
+            <span class="tag tag-green" id="tagGDP">GDP增速</span>
+          </div>
+        </div>
+        <div class="detail-body" id="detailBody"></div>
+        <div class="panel-header" style="border-top:1px solid var(--border-2); border-bottom:none;">
+          <div class="panel-title">
+            <h3>Focus List</h3>
+            <p>点击下列区域也可以切换到对应详情。</p>
+          </div>
+        </div>
+        <div class="region-list" id="regionList"></div>
+      </aside>
+    </section>
+
+    <section class="bottom-grid">
+      <div class="card">
+        <div class="card-head">
+          <h3>数据维护方案</h3>
+          <p>仍然保留最稳妥的做法：用一个独立的 JSON 文件维护所有区域信息，便于你自己随时改。</p>
+        </div>
+        <div class="card-body">
+          <div class="maintenance-list">
+            <div class="maintenance-item">
+              <strong>方案一：继续编辑 <code>macro_data.json</code>（最推荐）</strong>
+              <p>优点是轻量、稳定、无需数据库、无需后端、用记事本或 VS Code 就能改，刷新网页立即生效。</p>
+            </div>
+            <div class="maintenance-item">
+              <strong>方案二：后续升级为 Google Sheets / Airtable</strong>
+              <p>如果未来你要多人协作维护数据，可以把数据源迁移到表格型数据库，再让网页自动读取。</p>
+            </div>
+            <div class="maintenance-item">
+              <strong>方案三：正式上线时接入后端</strong>
+              <p>如果以后要做成真正长期在线使用的网站，再接一个轻量 CMS 或后端接口会更规范。</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h3>当前数据文件结构</h3>
+          <p>你只需要维护这些字段，不用改网页逻辑。</p>
+        </div>
+        <div class="card-body">
+          <table class="data-table">
+            <tbody>
+              <tr><td>last_updated</td><td>整张地图数据的更新日期</td></tr>
+              <tr><td>regions.us</td><td>美国区域对象</td></tr>
+              <tr><td>rate</td><td>利率</td></tr>
+              <tr><td>gdp_growth</td><td>GDP 增速</td></tr>
+              <tr><td>central_bank_decision</td><td>央行决议</td></tr>
+              <tr><td>major_event</td><td>重大事件</td></tr>
+              <tr><td>currency_strength</td><td>货币强弱</td></tr>
+              <tr><td>market_view</td><td>市场观点</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="ticker">
+      <div class="ticker-track" id="tickerTrack"></div>
+    </section>
+  </main>
+
+  <script>
+    const fallbackData = {
+      last_updated: "本地示例数据",
+      regions: {
+        eurozone: { name: "欧元区", rate: "请编辑 macro_data.json", gdp_growth: "请编辑 macro_data.json", central_bank_decision: "请编辑 macro_data.json", major_event: "请编辑 macro_data.json", currency_strength: "请编辑 macro_data.json", market_view: "请编辑 macro_data.json" },
+        japan: { name: "日本", rate: "请编辑 macro_data.json", gdp_growth: "请编辑 macro_data.json", central_bank_decision: "请编辑 macro_data.json", major_event: "请编辑 macro_data.json", currency_strength: "请编辑 macro_data.json", market_view: "请编辑 macro_data.json" },
+        china: { name: "中国（含港澳台）", rate: "请编辑 macro_data.json", gdp_growth: "请编辑 macro_data.json", central_bank_decision: "请编辑 macro_data.json", major_event: "请编辑 macro_data.json", currency_strength: "请编辑 macro_data.json", market_view: "请编辑 macro_data.json" },
+        korea: { name: "韩国", rate: "请编辑 macro_data.json", gdp_growth: "请编辑 macro_data.json", central_bank_decision: "请编辑 macro_data.json", major_event: "请编辑 macro_data.json", currency_strength: "请编辑 macro_data.json", market_view: "请编辑 macro_data.json" },
+        us: { name: "美国", rate: "请编辑 macro_data.json", gdp_growth: "请编辑 macro_data.json", central_bank_decision: "请编辑 macro_data.json", major_event: "请编辑 macro_data.json", currency_strength: "请编辑 macro_data.json", market_view: "请编辑 macro_data.json" }
+      }
+    };
+
+    const fieldMap = [
+      ["利率", "rate"],
+      ["GDP增速", "gdp_growth"],
+      ["央行决议", "central_bank_decision"],
+      ["重大事件", "major_event"],
+      ["货币强弱", "currency_strength"],
+      ["市场观点", "market_view"]
+    ];
+
+    const order = ["us", "eurozone", "china", "korea", "japan"];
+    let macroData = fallbackData;
+    let lockedRegion = "us";
+
+    const lastUpdated = document.getElementById("lastUpdated");
+    const statsGrid = document.getElementById("statsGrid");
+    const detailName = document.getElementById("detailName");
+    const detailIntro = document.getElementById("detailIntro");
+    const detailBody = document.getElementById("detailBody");
+    const regionList = document.getElementById("regionList");
+    const tickerTrack = document.getElementById("tickerTrack");
+    const tagRate = document.getElementById("tagRate");
+    const tagCurrency = document.getElementById("tagCurrency");
+    const tagGDP = document.getElementById("tagGDP");
+
+    function escapeHtml(value = "") {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function getRegion(regionKey) {
+      return macroData.regions?.[regionKey] || null;
+    }
+
+    function shortText(text = "", len = 42) {
+      const str = String(text || "");
+      return str.length > len ? str.slice(0, len) + "…" : str;
+    }
+
+    function renderStats() {
+      statsGrid.innerHTML = order.map((key) => {
+        const region = getRegion(key);
+        if (!region) return "";
+        return `
+          <div class="stat-card ${lockedRegion === key ? 'active' : ''}" data-select-region="${key}">
+            <div class="stat-top">
+              <div class="stat-name">${escapeHtml(region.name)}</div>
+              <span class="tag tag-blue">FOCUS</span>
+            </div>
+            <div class="stat-main">
+              <div class="mini-metric">
+                <div>Rate</div>
+                <div>${escapeHtml(shortText(region.rate, 28))}</div>
+              </div>
+              <div class="mini-metric">
+                <div>GDP</div>
+                <div>${escapeHtml(shortText(region.gdp_growth, 28))}</div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      statsGrid.querySelectorAll('[data-select-region]').forEach((node) => {
+        node.addEventListener('click', () => setLockedRegion(node.dataset.selectRegion));
+      });
+    }
+
+    function renderDetail(regionKey) {
+      const region = getRegion(regionKey);
+      if (!region) return;
+
+      detailName.textContent = region.name || regionKey;
+      detailIntro.textContent = `当前正在查看 ${region.name || regionKey} 的宏观信息。你可以继续 hover 其他区域预览，或点击任意区域完成切换。`;
+      tagRate.textContent = `利率｜${shortText(region.rate, 16)}`;
+      tagCurrency.textContent = `货币｜${shortText(region.currency_strength, 16)}`;
+      tagGDP.textContent = `GDP｜${shortText(region.gdp_growth, 16)}`;
+
+      detailBody.innerHTML = fieldMap.map(([label, key]) => `
+        <div class="info-card">
+          <div class="k">${label}</div>
+          <div class="v">${escapeHtml(region[key] || '—')}</div>
+        </div>
+      `).join('');
+
+      regionList.innerHTML = order.map((key) => {
+        const item = getRegion(key);
+        if (!item) return '';
+        return `
+          <div class="region-row ${regionKey === key ? 'active' : ''}" data-row-region="${key}">
+            <div>
+              <b>${escapeHtml(item.name)}</b>
+              <span>${escapeHtml(shortText(item.market_view, 34))}</span>
+            </div>
+            <span class="tag tag-gold">View</span>
+          </div>
+        `;
+      }).join('');
+
+      regionList.querySelectorAll('[data-row-region]').forEach((node) => {
+        node.addEventListener('click', () => setLockedRegion(node.dataset.rowRegion));
+      });
+
+      document.querySelectorAll('.stat-card').forEach((card) => {
+        card.classList.toggle('active', card.dataset.selectRegion === regionKey);
+      });
+    }
+
+    function renderTicker() {
+      const items = order.map((key) => {
+        const r = getRegion(key);
+        if (!r) return '';
+        return `<span class="ticker-item"><strong>${escapeHtml(r.name)}</strong>${escapeHtml(shortText(r.major_event, 70))}</span>`;
+      }).filter(Boolean);
+
+      tickerTrack.innerHTML = items.concat(items).join('');
+    }
+
+    function activateRegionPreview(regionKey) {
+      const region = getRegion(regionKey);
+      if (!region) return;
+      renderDetail(regionKey);
+      document.querySelectorAll('.hotspot').forEach((node) => {
+        node.classList.toggle('active', node.dataset.region === regionKey);
+      });
+    }
+
+    function setLockedRegion(regionKey) {
+      lockedRegion = regionKey;
+      renderStats();
+      renderDetail(regionKey);
+      document.querySelectorAll('.hotspot').forEach((node) => {
+        node.classList.toggle('locked', node.dataset.region === regionKey);
+        node.classList.toggle('active', node.dataset.region === regionKey);
+      });
+    }
+
+    function bindHotspots() {
+      document.querySelectorAll('.hotspot').forEach((node) => {
+        node.addEventListener('mouseenter', () => activateRegionPreview(node.dataset.region));
+        node.addEventListener('mouseleave', () => setLockedRegion(lockedRegion));
+        node.addEventListener('click', () => setLockedRegion(node.dataset.region));
+      });
+    }
+
+    async function loadData() {
+      try {
+        const response = await fetch('./macro_data.json', { cache: 'no-store' });
+        if (!response.ok) throw new Error('Cannot load macro_data.json');
+        macroData = await response.json();
+      } catch (error) {
+        console.warn('Using fallback data. Run with a local server to load macro_data.json.', error);
+        macroData = fallbackData;
+      }
+
+      lastUpdated.textContent = macroData.last_updated || '未填写';
+      renderStats();
+      renderTicker();
+      bindHotspots();
+      setLockedRegion(lockedRegion);
+    }
+
+    loadData();
+  </script>
+</body>
+</html>
